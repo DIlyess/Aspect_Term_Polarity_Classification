@@ -11,7 +11,8 @@ def set_reproducible():
     # The below is necessary to have reproducible behavior.
     import random as rn
     import os
-    os.environ['PYTHONHASHSEED'] = '0'
+
+    os.environ["PYTHONHASHSEED"] = "0"
     # The below is necessary for starting Numpy generated random numbers
     # in a well-defined initial state.
     np.random.seed(17)
@@ -20,27 +21,34 @@ def set_reproducible():
     rn.seed(12345)
 
 
-
 def load_label_output(filename):
-    with open(filename, 'r', encoding='UTF-8') as f:
+    with open(filename, "r", encoding="UTF-8") as f:
         return [line.strip().split("\t")[0] for line in f if line.strip()]
 
 
-
 def eval_list(glabels, slabels):
-    if (len(glabels) != len(slabels)):
-        print("\nWARNING: label count in system output (%d) is different from gold label count (%d)\n" % (
-        len(slabels), len(glabels)))
+    if len(glabels) != len(slabels):
+        print(
+            "\nWARNING: label count in system output (%d) is different from gold label count (%d)\n"
+            % (len(slabels), len(glabels))
+        )
     n = min(len(slabels), len(glabels))
     incorrect_count = 0
     for i in range(n):
-        if slabels[i] != glabels[i]: incorrect_count += 1
+        if slabels[i] != glabels[i]:
+            incorrect_count += 1
     acc = (n - incorrect_count) / n
-    return acc*100
+    return acc * 100
 
 
-
-def train_and_eval(classifier: Classifier, trainfile: str, devfile: str, testfile: str, run_id: int, device):
+def train_and_eval(
+    classifier: Classifier,
+    trainfile: str,
+    devfile: str,
+    testfile: str,
+    run_id: int,
+    device,
+):
     print(f"\nRUN: {run_id}")
     print("  %s.1. Training the classifier..." % str(run_id))
     classifier.train(trainfile, devfile, device)
@@ -64,17 +72,26 @@ def train_and_eval(classifier: Classifier, trainfile: str, devfile: str, testfil
 
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('-n', '--n_runs', help='Number of runs.', type=int, default=5)
-    argparser.add_argument('-g', '--gpu', help='GPU device id on which to run the model', type=int)
-    argparser.add_argument('-o', '--ollama_url', help='Full URL of the ollama server (including port number), if any', type=str)
+    argparser.add_argument(
+        "-n", "--n_runs", help="Number of runs.", type=int, default=5
+    )
+    argparser.add_argument(
+        "-g", "--gpu", help="GPU device id on which to run the model", type=int
+    )
+    argparser.add_argument(
+        "-o",
+        "--ollama_url",
+        help="Full URL of the ollama server (including port number), if any",
+        type=str,
+    )
     args = argparser.parse_args()
     device_name = "cpu" if args.gpu is None else f"cuda:{args.gpu}"
     device = torch.device(device_name)
     n_runs = args.n_runs
     set_reproducible()
     datadir = "../data/"
-    trainfile =  datadir + "traindata.csv"
-    devfile =  datadir + "devdata.csv"
+    trainfile = datadir + "traindata.csv"
+    devfile = datadir + "devdata.csv"
     testfile = None
     # testfile = datadir + "testdata.csv"
 
@@ -82,22 +99,21 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
     devaccs = []
     testaccs = []
-    for i in range(1, n_runs+1):
-        classifier =  Classifier(ollama_url=args.ollama_url)
-        devacc, testacc = train_and_eval(classifier, trainfile, devfile, testfile, i, device)
-        devaccs.append(np.round(devacc,2))
-        testaccs.append(np.round(testacc,2))
-    print('\nCompleted %d runs.' % n_runs)
-    total_exec_time = (time.perf_counter() - start_time)
+    for i in range(1, n_runs + 1):
+        classifier = Classifier(ollama_url=args.ollama_url)
+        devacc, testacc = train_and_eval(
+            classifier, trainfile, devfile, testfile, i, device
+        )
+        devaccs.append(np.round(devacc, 2))
+        testaccs.append(np.round(testacc, 2))
+    print("\nCompleted %d runs." % n_runs)
+    total_exec_time = time.perf_counter() - start_time
     print("Dev accs:", devaccs)
     print("Test accs:", testaccs)
     print()
     print("Mean Dev Acc.: %.2f (%.2f)" % (np.mean(devaccs), np.std(devaccs)))
     print("Mean Test Acc.: %.2f (%.2f)" % (np.mean(testaccs), np.std(testaccs)))
-    print("\nExec time: %.2f s. ( %d per run )" % (total_exec_time, total_exec_time / n_runs))
-
-
-
-
-
-
+    print(
+        "\nExec time: %.2f s. ( %d per run )"
+        % (total_exec_time, total_exec_time / n_runs)
+    )

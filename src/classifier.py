@@ -7,11 +7,10 @@ class Classifier:
     """
     The Classifier: complete the definition of this class template by completing the __init__() function and
     the 2 methods train() and predict() below. Please do not change the signature of these methods
-     """
-
+    """
 
     ############################################# complete the classifier class below
-    
+
     def __init__(self, ollama_url: str):
         """
         This should create and initilize the model.
@@ -23,8 +22,6 @@ class Classifier:
         """
         pass
 
-    
-    
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
         Trains the model on the training set stored in file trainfile
@@ -39,8 +36,6 @@ class Classifier:
 
         """
 
-
-
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
         """Predicts class labels for the input instances in file 'datafile'
         Returns the list of predicted labels
@@ -51,9 +46,3 @@ class Classifier:
         Otherwise:
           - PUT THE MODEL and DATA on the specified device! Do not use another device
         """
-
-
-
-
-
-
