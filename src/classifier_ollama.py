@@ -1,8 +1,7 @@
 from typing import List
-from embedding import *
+from ollama import Client
 import torch
-from torch.utils.data import DataLoader, Dataset
-from transformers import BertTokenizer, BertForSequenceClassification
+
 
 class Classifier:
     """
@@ -21,9 +20,11 @@ class Classifier:
         !!!!! If you have choosen an approach based on training an MLM or a generative LM, then your model should
         be defined and initialized here.
         """
-        model_name = 'bert-base-uncased'  # Utilisation d'un modèle BERT pré-entraîné autorisé
-        self.tokenizer = BertTokenizer.from_pretrained(model_name)
-        self.model = BertForSequenceClassification.from_pretrained(model_name, num_labels=3)
+        #ollama_url= "http://your_ollama_server_url:11434"
+        model_name='llama3.2'
+        self.client = Client(base_url=ollama_url)
+        self.model_name = model_name
+
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
@@ -38,29 +39,7 @@ class Classifier:
          OF MODEL HYPERPARAMETERS
 
         """
-
-        train_dataset = Embedding(train_filename, self.tokenizer)
-        train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-
-        self.model.to(device)
-        self.model.train()
-
-        optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
-        loss_fn = torch.nn.CrossEntropyLoss()
-
-        for epoch in range(3):  # Nombre d'époques
-            for batch in train_loader:
-                inputs, labels = batch
-                inputs = {key: val.to(device) for key, val in inputs.items()}
-                labels = labels.to(device)
-
-                optimizer.zero_grad()
-                outputs = self.model(**inputs)
-                loss = loss_fn(outputs.logits, labels)
-                loss.backward()
-                optimizer.step()
-
-        
+        pass
 
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
         """Predicts class labels for the input instances in file 'datafile'
@@ -72,23 +51,13 @@ class Classifier:
         Otherwise:
           - PUT THE MODEL and DATA on the specified device! Do not use another device
         """
-
-        self.model.to(device)
-        self.model.eval()
-
-        dataset =Embedding(data_filename, self.tokenizer)
-        data_loader = DataLoader(dataset, batch_size=16, shuffle=False)
-
         predictions = []
-        label_map = {0: 'negative', 1: 'neutral', 2: 'positive'}
-
-        with torch.no_grad():
-            for batch in data_loader:
-                inputs, _ = batch
-                inputs = {key: val.to(device) for key, val in inputs.items()}
-
-                outputs = self.model(**inputs)
-                preds = torch.argmax(outputs.logits, dim=1)
-                predictions.extend([label_map[pred.item()] for pred in preds])
+   
+        with open(data_filename, 'r') as file:
+            for line in file:
+                sentence, aspect_term, aspect_category = line.strip().split('\t')[4], line.strip().split('\t')[2], line.strip().split('\t')[1]
+                prompt = f"Phrase : {sentence}\nTerme : {aspect_term}\nCatégorie : {aspect_category}\nPolarité :"
+                response = self.client.chat(model=self.model_name, messages=[{'role': 'user', 'content': prompt}])
+                predictions.append(response['message']['content'].strip())
 
         return predictions
