@@ -1,6 +1,9 @@
 from typing import List
-
+import ollama
+import pandas as pd
 import torch
+
+from few_shot_examples import EXAMPLES
 
 
 class Classifier:
@@ -20,7 +23,10 @@ class Classifier:
         !!!!! If you have choosen an approach based on training an MLM or a generative LM, then your model should
         be defined and initialized here.
         """
-        pass
+        self.ollama_url = ollama_url  # Store Ollama server URL
+        self.client = ollama.Client(ollama_url)
+        self.examples = EXAMPLES  # Stores few-shot learning examples
+        self.model = "gemma3:4b"  # Specify the model to use
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
@@ -35,6 +41,7 @@ class Classifier:
          OF MODEL HYPERPARAMETERS
 
         """
+        pass
 
     def predict(self, data_filename: str, device: torch.device) -> List[str]:
         """Predicts class labels for the input instances in file 'datafile'
@@ -46,3 +53,33 @@ class Classifier:
         Otherwise:
           - PUT THE MODEL and DATA on the specified device! Do not use another device
         """
+        df = pd.read_csv(data_filename, sep="\t")
+
+        predictions = []
+        for i, row in df.iterrows():
+            sentiment = row.iloc[0]
+            aspect = row.iloc[1]
+            item = row.iloc[2]
+            position = row.iloc[3]
+            sentence = row.iloc[4]
+
+            # Construct the prompt
+            prompt = f""" 
+                        You are a Aspect-Term Polarity Classifier for Sentiment Analysis.
+                        You have to predict the sentiment of a sentence given the aspect of an item and the position of the item in the sentence.
+                        The sentiment can be one of the following: "positive","neutral", "negative".
+                        Item: "{item}"
+                        Item Position: "{position}"
+                        Aspect: "{aspect}"
+                        Sentence: "{sentence}"
+                        Return just one word: "positive", "negative" or "neutral".
+                      """
+
+            # Query Ollama
+            response = self.client.chat(
+                model=self.model, messages=[{"role": "user", "content": prompt}]
+            )
+            sentiment_prediction = response["message"]["content"].strip()
+            predictions.append(sentiment_prediction)
+
+        return predictions
