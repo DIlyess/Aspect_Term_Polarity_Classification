@@ -2,8 +2,14 @@ from typing import List
 import ollama
 import pandas as pd
 import torch
+import sys
 
-from few_shot_examples import EXAMPLES
+from few_shot_examples import (
+    sequential_prompt,
+    prompt_instruct,
+    EXAMPLES_INSTRUCT,
+    EXAMPLES_SEQUENTIAL,
+)
 
 
 class Classifier:
@@ -25,8 +31,8 @@ class Classifier:
         """
         self.ollama_url = ollama_url  # Store Ollama server URL
         self.client = ollama.Client(ollama_url)
-        self.examples = EXAMPLES  # Stores few-shot learning examples
-        self.model = "gemma3:4b"  # Specify the model to use
+        self.examples = EXAMPLES_INSTRUCT  # Stores few-shot learning examples
+        self.model = "gemma3:1b"  # Specify the model to use
 
     def train(self, train_filename: str, dev_filename: str, device: torch.device):
         """
@@ -64,16 +70,11 @@ class Classifier:
             sentence = row.iloc[4]
 
             # Construct the prompt
-            prompt = f""" 
-                        You are a Aspect-Term Polarity Classifier for Sentiment Analysis.
-                        You have to predict the sentiment of a sentence given the aspect of an item and the position of the item in the sentence.
-                        The sentiment can be one of the following: "positive","neutral", "negative".
-                        Item: "{item}"
-                        Item Position: "{position}"
-                        Aspect: "{aspect}"
-                        Sentence: "{sentence}"
-                        Return just one word: "positive", "negative" or "neutral".
-                      """
+            prompt = (
+                EXAMPLES_INSTRUCT[0]
+                + "\n"
+                + prompt_instruct(item, position, aspect, sentence)
+            )
 
             # Query Ollama
             response = self.client.chat(
