@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Literal
 import ollama
 import pandas as pd
 import torch
 import sys
+from pydantic import BaseModel
 
 from few_shot_examples import (
     sequential_prompt,
@@ -10,6 +11,10 @@ from few_shot_examples import (
     EXAMPLES_INSTRUCT,
     EXAMPLES_SEQUENTIAL,
 )
+
+
+class SentimentOutput(BaseModel):
+    sentiment: Literal["positive", "negative", "neutral"]
 
 
 class Classifier:
@@ -69,18 +74,20 @@ class Classifier:
             position = row.iloc[3]
             sentence = row.iloc[4]
 
-            # Construct the prompt
             prompt = (
                 EXAMPLES_INSTRUCT[0]
                 + "\n"
                 + prompt_instruct(item, position, aspect, sentence)
             )
 
-            # Query Ollama
             response = self.client.chat(
-                model=self.model, messages=[{"role": "user", "content": prompt}]
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                # format=SentimentOutput.model_json_schema(), # Uncomment to use guided decoding
             )
             sentiment_prediction = response["message"]["content"].strip()
+            # sentiment_prediction = eval(response["message"]["content"])["sentiment"] # Uncomment to use guided decoding
+
             predictions.append(sentiment_prediction)
 
         return predictions
