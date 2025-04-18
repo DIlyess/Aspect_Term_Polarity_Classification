@@ -3,6 +3,7 @@ from embedding import *
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import BertTokenizer, BertForSequenceClassification
+import copy
 
 class Classifier:
     """
@@ -41,6 +42,8 @@ class Classifier:
 
         train_dataset = Embedding(train_filename, self.tokenizer)
         train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+        train_dataset = Embedding(train_filename, self.tokenizer)
+        val_data_loader = DataLoader(dev_filename, batch_size=16, shuffle=False)
 
         self.model.to(device)
         self.model.train()
@@ -48,7 +51,13 @@ class Classifier:
         optimizer = torch.optim.AdamW(self.model.parameters(), lr=5e-5)
         loss_fn = torch.nn.CrossEntropyLoss()
 
-        for epoch in range(3):  # Nombre d'époques
+
+        epochs=10
+        persistence=4 #max number of epochs we continue training without improving accuracy 
+        max_acc, max_f1, max_epoch= 0, 0, 0
+        best_model = copy.deepcopy(self.model)
+
+        for epoch in range(epochs):  # Nombre d'époques
             for batch in train_loader:
                 inputs, labels = batch
                 inputs = {key: val.to(device) for key, val in inputs.items()}
@@ -59,6 +68,28 @@ class Classifier:
                 loss = loss_fn(outputs.logits, labels)
                 loss.backward()
                 optimizer.step()
+
+             #Validation
+            acc, f1 = self.evaluate_acc_f1(val_data_loader)
+            print('> val_acc: {:.4f}, val_f1: {:.4f}'.format(acc, f1))
+            
+            #Save model with best validation accuracy
+            if acc > max_acc:
+                max_acc = acc
+                max_epoch = epoch
+                best_model = copy.deepcopy(self.model)
+
+            if f1 > max_f1:
+                max_f1 = f1
+
+            if epoch - max_epoch >= persistence:
+                print('>> early stop.')
+                break
+            
+            print("Best Validation Accuracy : {:.4f}".format(max_acc))
+            print("Best F1-score : {:.4f}".format(max_f1))
+            self.model = best_model
+
 
         
 
