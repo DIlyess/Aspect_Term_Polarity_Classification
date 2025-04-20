@@ -117,9 +117,11 @@ class Classifier:
             def __getitem__(self, idx):
                 row = self.dataframe.iloc[idx]
                 start, end = map(int, row["offset"].split(":"))
+
                 sentence = self.highlighter(row["sentence"], start, end)
-                aspect = f"{row['aspect']} [SEP] {row['term']}"
-                label = Label2Id[row["label"]]
+                aspect = row["aspect"]  # ex: "FOOD#QUALITY"
+
+                # Encodage propre : phrase avec [TERM]...[/TERM] + aspect séparé (tokénisé comme 2e séquence)
                 encoded = self.tokenizer(
                     sentence,
                     aspect,
@@ -128,9 +130,12 @@ class Classifier:
                     max_length=128,
                     return_tensors="pt"
                 )
+
+                label = Label2Id[row["label"]]
                 item = {k: v.squeeze() for k, v in encoded.items()}
                 item["labels"] = torch.tensor(label)
                 return item
+
             
         train_dataset = PolarityDataset(train_df, self.tokenizer, self.highlight_term)
         dev_dataset = PolarityDataset(dev_df, self.tokenizer, self.highlight_term)
@@ -148,6 +153,7 @@ class Classifier:
             metric_for_best_model="eval_loss",
             logging_dir="./logs",
             logging_strategy="epoch",
+            learning_rate=1e-5,
         )
 
         trainer = Trainer(
