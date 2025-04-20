@@ -75,9 +75,9 @@ class Classifier:
             sentence = row.iloc[4]
 
             prompt = (
-                EXAMPLES_INSTRUCT[0]
+                EXAMPLES_SEQUENTIAL[0]
                 + "\n"
-                + prompt_instruct(item, position, aspect, sentence)
+                + sequential_prompt(item, position, aspect, sentence)
             )
 
             response = self.client.chat(

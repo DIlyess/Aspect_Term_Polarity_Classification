@@ -20,6 +20,7 @@ def sequential_prompt(item, position, aspect, sentence):
 def prompt_instruct(item, position, aspect, sentence):
     return f"""What is the sentiment of the word "{item}" at position "{position}" (regarding the criteria "{aspect}") in the sentence: "{sentence}"?
             Please return just one word: "positive", "negative" or "neutral".
+            OUTPUT :
             """
 
 
