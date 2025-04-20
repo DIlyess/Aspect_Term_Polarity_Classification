@@ -5,7 +5,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Trai
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
-import os
+# import os
 
 Label2Id = {"positive": 0, "negative": 1, "neutral": 2}
 Id2Label = {0: "positive", 1: "negative", 2: "neutral"}
@@ -15,7 +15,6 @@ class Classifier:
     The Classifier: complete the definition of this class template by completing the __init__() function and
     the 2 methods train() and predict() below. Please do not change the signature of these methods
      """
-
 
     ############################################# complete the classifier class below
     
@@ -99,8 +98,7 @@ class Classifier:
 
         """
 
-        import os
-        os.environ["WANDB_DISABLED"] = "true"
+        # os.environ["WANDB_DISABLED"] = "true"
 
         train_df = self.load_data(train_filename)
         dev_df = self.load_data(dev_filename)
@@ -119,9 +117,8 @@ class Classifier:
                 start, end = map(int, row["offset"].split(":"))
 
                 sentence = self.highlighter(row["sentence"], start, end)
-                aspect = row["aspect"]  # ex: "FOOD#QUALITY"
+                aspect = row["aspect"]
 
-                # Encodage propre : phrase avec [TERM]...[/TERM] + aspect séparé (tokénisé comme 2e séquence)
                 encoded = self.tokenizer(
                     sentence,
                     aspect,
