@@ -101,7 +101,7 @@ class Classifier:
 
         import os
         os.environ["WANDB_DISABLED"] = "true"
-        
+
         train_df = self.load_data(train_filename)
         dev_df = self.load_data(dev_filename)
 
@@ -174,7 +174,7 @@ class Classifier:
         self.model.eval()
 
         df = self.load_data(data_filename)
-        tokenized = self._prepare_batch(df)
+        tokenized = self.process_df(df)
         tokenized = {k: v.to(device) for k, v in tokenized.items()}
 
         with torch.no_grad():
