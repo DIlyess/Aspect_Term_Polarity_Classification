@@ -98,6 +98,10 @@ class Classifier:
          OF MODEL HYPERPARAMETERS
 
         """
+
+        import os
+        os.environ["WANDB_DISABLED"] = "true"
+        
         train_df = self.load_data(train_filename)
         dev_df = self.load_data(dev_filename)
 
