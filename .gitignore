@@ -2,3 +2,4 @@ nlp_assignment_doc_2025 3.pdf
 .DS_Store
 *.pyc
 __pycache__/
+src/results/
