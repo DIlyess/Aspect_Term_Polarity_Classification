@@ -31,6 +31,17 @@ Example input:
 }
 ```
 
+## Data Distribution
+
+![Data distribution](charts/data_distribution.png)
+
+We observe that the dataset is imbalanced, in multiple ways :
+
+- The number of samples per aspect category is not uniform.
+- The number of samples per sentiment label is not uniform, with a significantly smaller number of `neutral` samples compared to `positive` and `negative` samples.
+
+Depending on the business objective, it might be beneficial to address these imbalances, either by oversampling minority classes or by applying a weighted loss function during training to improve the balance between precision and recall. However, we chose not to implement these strategies in our models, as the `tester.py` script evaluates performance solely based on accuracy.
+
 ## Implemented Approaches
 
 ### 1. Fine-Tuned Transformer Classifier
@@ -47,12 +58,13 @@ This method trains a DeBERTa-v3-large model from HuggingFace on a custom ABSA da
   - Used `4` epochs, batch size `8`, and learning rate `1e-5`. (This small amount of epochs was chosen due to hardware limitations and the fact that the model was already pretrained on a large corpus.)
   - The classifier is evaluated on a dev set with ~90% accuracy.
 - **Resources**:
+  - Trained on 1503 samples
   - Trained on GPU (CUDA) if available.
   - Libraries: `transformers`, `torch`, `datasets`, `sentencepiece`, `lightning`.
 
-**Accuracy on Dev Set**:
+**Accuracy on Dev Set (5 folds)**:
 
-- [90.0, 90.0, 90.0, 90.0, 90.0] (To be precised with the final test set)
+- [89.63, 92.29, 92.29, 92.29, 92.29]
 
 ### 2. In-Context Learning with Ollama LLMs
 
@@ -69,7 +81,7 @@ This method avoids training and instead uses few-shot prompting to query a local
   - Models are instructed to return structured sentiment output in JSON format.
 - **No training required**, predictions are made through prompts.
 
-**Accuracy on Dev Set**:
+**Accuracy on Dev Set (5 folds)**:
 
 - Single step prompt : [53.07, 53.6, 53.07, 53.07, 53.07]
 - Step-by-step prompt [54.67, 55.2, 55.47, 54.93, 54.93]
